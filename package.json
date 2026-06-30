@@ -1,0 +1,22 @@
+{
+  "name": "eirefuel-chatbot",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A safe terminal prototype for the fictional ÉireFuel customer-service chatbot.",
+  "scripts": {
+    "start": "node --env-file=.env src/index.js",
+    "site": "node src/site-server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@google/genai": "^1.52.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "allowScripts": {
+    "protobufjs@7.6.4": true,
+    "@google/genai@1.52.0": true
+  }
+}

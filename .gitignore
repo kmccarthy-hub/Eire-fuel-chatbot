@@ -1,0 +1,10 @@
+node_modules/
+.npm-cache/
+.gitdata/
+.tools/
+.ghconfig/
+.env
+data/alerts.local.json
+*.log
+.DS_Store
+Thumbs.db

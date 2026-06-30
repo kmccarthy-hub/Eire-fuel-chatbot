@@ -116,7 +116,7 @@ suggestions.addEventListener("click", event => {
 });
 
 try {
-  const response = await fetch("../data/inventory.json");
+  const response = await fetch("./data/inventory.json");
   if (!response.ok) throw new Error("Inventory unavailable");
   inventory = await response.json();
   renderFlavours();

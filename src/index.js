@@ -32,10 +32,9 @@ while (true) {
   }
 
   const safeReply = routeMessage(message, inventory, session);
-  const reply = await polishReply(ai, model, safeReply);
+  const reply = await polishReply(ai, model, safeReply, message);
   console.log(`Bot: ${reply}\n`);
 }
 
 terminal.close();
 console.log("Goodbye.");
-

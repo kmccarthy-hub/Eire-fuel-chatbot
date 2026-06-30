@@ -9,7 +9,7 @@ A customer-service chatbot project for a fictional Irish protein-bar company. It
 
 ## Web demo
 
-The shareable site is in `docs/`. It runs entirely in the browser using sanitized fictional data, so classmates can try it without an API key.
+The shareable site is in `docs/`. Each user message is sent to a protected Vercel endpoint, where Gemini processes the original input and recent conversation before producing a natural-language answer grounded in the fictional inventory.
 
 Run it locally:
 
@@ -28,7 +28,28 @@ Then open `http://127.0.0.1:4174`.
 5. Select **Save**.
 6. Wait for GitHub to show the public Pages URL, then test it in a private browser window.
 
-The `.env` file is ignored and must never be uploaded. GitHub Pages cannot protect a Gemini key, so the published class demo deliberately makes no Gemini API request. A future live-AI site would call a separately hosted protected backend.
+The `.env` file is ignored and must never be uploaded. GitHub Pages cannot protect a Gemini key, so the page calls a separately hosted Vercel Function. The key exists only in Vercel's encrypted environment variables.
+
+### Live architecture
+
+```text
+GitHub Pages interface
+        ↓ original user message + short conversation history
+Protected Vercel Function
+        ↓ message + approved fictional inventory
+Gemini API
+        ↓ grounded natural-language response
+GitHub Pages interface
+```
+
+The backend is implemented in `api/chat.js`. Before deployment:
+
+1. Import this GitHub repository into Vercel.
+2. Keep the framework preset as **Other** and the root directory as the repository root.
+3. Add `GEMINI_API_KEY` as a Production environment variable.
+4. Optionally add `GEMINI_MODEL=gemini-2.5-flash`.
+5. Deploy and copy the resulting `/api/chat` URL into `docs/assets/config.js`.
+6. Commit and push the configuration change so GitHub Pages uses the backend.
 
 ## Safety boundary
 
@@ -70,7 +91,7 @@ Run `npm test`.
 - The stock snapshot is intentionally dated 30 June 2026 for the coursework scenario.
 - Alert registration is simulated; no contact information is required, stored, or sent.
 - There is no ordering, account, delivery, refund, or medical-advice functionality.
-- GitHub Pages can eventually host the interface, but the Gemini API call must use a separate protected backend.
+- GitHub Pages hosts the interface; the Gemini API call runs only in the protected Vercel backend.
 
 ## Project map
 

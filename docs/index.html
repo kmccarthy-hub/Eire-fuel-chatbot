@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/styles.css">
+    <script src="assets/config.js"></script>
     <script type="module" src="assets/app.js"></script>
   </head>
   <body>
@@ -74,7 +75,7 @@
             <p class="eyebrow">Try the experience</p>
             <h2 id="assistant-title">Meet the ÉireFuel stock assistant</h2>
           </div>
-          <p>This published version uses the same fictional, structured stock data as our tested prototype. It never needs or exposes an API key.</p>
+          <p>Each question is processed by Gemini through a protected serverless API and grounded in the same fictional, structured stock data as our tested prototype.</p>
         </div>
 
         <div class="assistant-layout">
@@ -94,7 +95,7 @@
               </div>
               <div>
                 <h3>ÉireFuel Assistant</h3>
-                <p><span class="online-dot"></span> Interactive demo</p>
+                <p><span class="online-dot"></span> <span id="ai-status">Connecting to AI…</span></p>
               </div>
               <button class="icon-button" id="reset-chat" type="button" aria-label="Reset conversation" title="Reset conversation">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.34 5.66M20 4v7h-7"/></svg>
@@ -116,7 +117,7 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 4 16 8-16 8 3-8-3-8Zm3 8h13"/></svg>
               </button>
             </form>
-            <p class="chat-disclaimer">AI prototype · Fictional stock data · Estimates may change</p>
+            <p class="chat-disclaimer">Gemini-powered prototype · Fictional stock data · Estimates may change</p>
           </div>
         </div>
       </section>
@@ -142,7 +143,7 @@
           <article>
             <span class="step-number">03</span>
             <h3>Secrets stay server-side</h3>
-            <p>The shareable GitHub Pages demo is deterministic. A live Gemini version would use a protected backend.</p>
+            <p>GitHub Pages sends each message to Gemini through a protected serverless backend, keeping the API key out of the browser.</p>
           </article>
         </div>
       </section>

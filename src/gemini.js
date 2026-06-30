@@ -12,13 +12,13 @@ export function createGemini(apiKey) {
   return new GoogleGenAI({ apiKey });
 }
 
-export async function polishReply(ai, model, safeReply) {
+export async function polishReply(ai, model, safeReply, userMessage = "") {
   if (!ai) return safeReply;
 
   try {
     const response = await ai.models.generateContent({
       model,
-      contents: `Approved response:\n${safeReply}`,
+      contents: `Original user message:\n${userMessage}\n\nApproved response:\n${safeReply}`,
       config: {
         systemInstruction,
         temperature: 0.1
@@ -40,4 +40,3 @@ function preservesFacts(source, candidate) {
   return JSON.stringify(sourceNumbers) === JSON.stringify(candidateNumbers)
     && JSON.stringify(sourceEmails) === JSON.stringify(candidateEmails);
 }
-

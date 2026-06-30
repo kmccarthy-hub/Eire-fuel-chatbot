@@ -4,10 +4,12 @@ const input = document.querySelector("#chat-input");
 const resetButton = document.querySelector("#reset-chat");
 const suggestions = document.querySelector("#suggestions");
 const flavourList = document.querySelector("#flavour-list");
+const statusText = document.querySelector("#ai-status");
 
 let inventory;
-let lastProduct = null;
-let pendingAlert = null;
+let history = [];
+let sending = false;
+const API_URL = window.EIREFUEL_API_URL || "";
 
 const statusLabels = {
   in_stock: "In stock",
@@ -16,113 +18,6 @@ const statusLabels = {
   discontinued: "Unavailable",
   unknown: "Check status"
 };
-
-const date = (value, withTime = false) =>
-  new Intl.DateTimeFormat("en-IE", {
-    dateStyle: "medium",
-    ...(withTime ? { timeStyle: "short" } : {}),
-    timeZone: "Europe/Dublin"
-  }).format(new Date(value));
-
-function normalize(value) {
-  return value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
-}
-
-function findProducts(query) {
-  const normalized = normalize(query);
-  const exact = inventory.products.filter(product =>
-    [product.name, ...product.aliases].some(name => normalize(name) === normalized)
-  );
-  if (exact.length) return exact;
-
-  const contained = inventory.products.filter(product =>
-    [product.name, ...product.aliases].some(name => {
-      const candidate = normalize(name);
-      return normalized.includes(candidate) || candidate.includes(normalized);
-    })
-  );
-  if (contained.length) return contained;
-
-  const ignored = new Set(["what", "when", "where", "which", "bars", "stock", "available", "about", "similar"]);
-  const words = normalized.split(" ").filter(word => word.length >= 4 && !ignored.has(word));
-  return inventory.products.filter(product => {
-    const searchable = normalize([product.name, ...product.aliases].join(" "));
-    return words.some(word => searchable.includes(word));
-  });
-}
-
-function alternatives(product) {
-  return product.alternativeIds
-    .map(id => inventory.products.find(candidate => candidate.id === id))
-    .filter(candidate => candidate && ["in_stock", "low_stock"].includes(candidate.status));
-}
-
-function productReply(product, userMessage) {
-  const lower = userMessage.toLowerCase();
-  const updated = date(product.lastUpdatedAt, true);
-  const suggestions = alternatives(product);
-  const alternativeText = suggestions.length
-    ? `\n\nYou could try ${suggestions.map(item => item.name).join(" or ")}—both are available in this demo.`
-    : "";
-
-  if (/\b(ingredient|allergen|allergy|contain|gluten|milk|nuts?|peanut|soya|safe)\b/i.test(lower)) {
-    return `${product.name} contains: ${product.ingredients}\n\nAllergen statement: ${product.allergens}\n\n${inventory.allergenDisclaimer}`;
-  }
-  if (product.status === "in_stock") {
-    return `${product.name} is in stock. Stock data was updated ${updated}.${alternativeText}`;
-  }
-  if (product.status === "low_stock") {
-    return `${product.name} is available, but running low. Stock data was updated ${updated}.${alternativeText}`;
-  }
-  if (product.status === "discontinued") {
-    return `${product.name} is no longer in the current range.${alternativeText}`;
-  }
-
-  const estimate = product.restock
-    ? `The ${product.restock.confidence} restock window is ${date(product.restock.start)} to ${date(product.restock.end)}. It is an estimate and may change.`
-    : "There is no approved restock date yet.";
-  return `${product.name} is currently out of stock. ${product.delayReason || ""}\n\n${estimate}\n\nLast updated ${updated}.${alternativeText}`;
-}
-
-function routeMessage(userMessage) {
-  const lower = userMessage.toLowerCase();
-
-  if (pendingAlert) {
-    if (/\b(yes|agree|consent|opt in)\b/i.test(lower)) {
-      const productName = pendingAlert.name;
-      pendingAlert = null;
-      return `Thanks—an alert request for ${productName} has been simulated. No email was collected and no message will be sent.`;
-    }
-    if (/\b(no|cancel|stop)\b/i.test(lower)) {
-      pendingAlert = null;
-      return "No problem. The simulated alert request has been cancelled.";
-    }
-    return "Please reply “yes” to consent to the simulation, or “no” to cancel. No contact details are required.";
-  }
-
-  if (/\b(human|person|support|agent)\b/i.test(lower)) {
-    return `For this prototype, human support is represented by ${inventory.supportEmail}. This is a fictional address and does not receive messages.`;
-  }
-
-  let matches = findProducts(userMessage);
-  if (!matches.length && lastProduct && /\b(it|that|this|alert|notify|ingredients?|allergens?)\b/i.test(lower)) {
-    matches = [lastProduct];
-  }
-
-  if (matches.length > 1) {
-    return `I found a few possible flavours: ${matches.map(product => product.name).join(", ")}. Which one did you mean?`;
-  }
-  if (!matches.length) {
-    return "I can check stock, explain a delay, suggest an available flavour, share approved label information, or simulate a restock alert. Which flavour are you interested in?";
-  }
-
-  lastProduct = matches[0];
-  if (/\b(alert|notify|notification|email me|let me know)\b/i.test(lower)) {
-    pendingAlert = lastProduct;
-    return `I can simulate a back-in-stock alert for ${lastProduct.name}. This demo will not collect your email or send a real message. Reply “yes” to consent to the simulation, or “no” to cancel.`;
-  }
-  return productReply(lastProduct, userMessage);
-}
 
 function addMessage(text, role) {
   const wrapper = document.createElement("div");
@@ -140,18 +35,54 @@ function addMessage(text, role) {
   messages.scrollTop = messages.scrollHeight;
 }
 
-function sendMessage(text) {
+async function sendMessage(text) {
   const clean = text.trim();
-  if (!clean) return;
+  if (!clean || sending) return;
   addMessage(clean, "user");
-  window.setTimeout(() => addMessage(routeMessage(clean), "assistant"), 260);
+  const priorHistory = history.slice(-8);
+  history.push({ role: "user", text: clean });
+  sending = true;
+  statusText.textContent = "Gemini is thinking…";
+  form.querySelector("button").disabled = true;
+  input.disabled = true;
+
+  try {
+    if (!API_URL) throw new Error("not-configured");
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 20_000);
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: clean, history: priorHistory }),
+      signal: controller.signal
+    });
+    window.clearTimeout(timeout);
+    const payload = await response.json();
+    if (!response.ok || !payload.llmUsed || !payload.reply) {
+      throw new Error(payload.error || "AI request failed");
+    }
+    addMessage(payload.reply, "assistant");
+    history.push({ role: "assistant", text: payload.reply });
+    statusText.textContent = `AI-powered · ${payload.model}`;
+  } catch (error) {
+    const detail = error.message === "not-configured"
+      ? "The live AI backend has not been connected yet."
+      : "The AI service is temporarily unavailable.";
+    addMessage(`${detail} Please try again shortly.`, "assistant");
+    statusText.textContent = "AI temporarily unavailable";
+  } finally {
+    sending = false;
+    form.querySelector("button").disabled = false;
+    input.disabled = false;
+    input.focus();
+  }
 }
 
 function resetChat() {
-  lastProduct = null;
-  pendingAlert = null;
+  history = [];
   messages.replaceChildren();
-  addMessage("Hi! I’m the ÉireFuel stock assistant. Ask me what’s available, when a flavour may return, or what you could try instead.", "assistant");
+  addMessage("Hi! I’m the Gemini-powered ÉireFuel stock assistant. Ask me naturally about availability, delays, alternatives, ingredients, or a simulated alert.", "assistant");
+  statusText.textContent = API_URL ? "AI ready" : "AI backend not connected";
   input.focus();
 }
 

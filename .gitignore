@@ -3,6 +3,8 @@ node_modules/
 .gitdata/
 .tools/
 .ghconfig/
+.vercel/
+.vercel-auth/
 .env
 data/alerts.local.json
 *.log

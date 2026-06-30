@@ -5,8 +5,11 @@ node_modules/
 .ghconfig/
 .vercel/
 .vercel-auth/
+.vercel-local/
 .env
 data/alerts.local.json
 *.log
 .DS_Store
 Thumbs.db
+
+.vercel

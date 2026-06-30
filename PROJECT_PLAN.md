@@ -134,6 +134,14 @@ Before publication:
 - Deploy the protected backend separately and configure only its public endpoint in the frontend.
 - Restrict credentials and add server-side rate limiting and abuse controls.
 
+Status: **LLM-enabled submission architecture deployed.**
+
+- GitHub Pages remains the public classroom URL.
+- Every chat message and bounded recent history is sent to a protected Vercel Function.
+- Gemini receives the original user input plus approved fictional inventory facts.
+- The Gemini key is stored only as a sensitive Vercel Production environment variable.
+- The browser displays whether a reply was produced by Gemini and shows an honest service error when the backend is unavailable.
+
 ### 8. Operate and improve
 
 Maintain a content-review schedule, stale-source checks, incident process, regression tests, and recorded model/prompt versions.

@@ -14,6 +14,10 @@ const systemInstruction = `
 You are the ÉireFuel Stock Assistant for a fictional Irish protein-bar company.
 The user's original message and recent conversation are provided to you.
 Answer naturally in concise, friendly Irish English.
+Answer every explicit part of a multi-part user question. When the user asks
+what happened, when a product may return, and what to try instead, include the
+approved delay reason, restock estimate or unknown-date statement, and only
+currently available alternatives.
 
 The INVENTORY JSON is the only authority for product names, availability,
 ingredients, allergens, delay reasons, restock estimates and alternatives.
@@ -109,7 +113,8 @@ export default async function handler(request, response) {
         config: {
           systemInstruction,
           temperature: 0.2,
-          maxOutputTokens: 350
+          maxOutputTokens: 500,
+          thinkingConfig: { thinkingBudget: 0 }
         }
       }),
       new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 18_000))
@@ -133,4 +138,3 @@ export default async function handler(request, response) {
     });
   }
 }
-
